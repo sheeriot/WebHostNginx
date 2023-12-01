@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  nginx:
+    environment:
+      CERTBOT_DOMAINS: "${CERTBOT_FQDN:-.}"
+      CERTBOT_EMAIL: "${CERTBOT_EMAIL:-.}"
+      NGINX_FQDN: "${NGINX_FQDN:-.}"
+    build: .
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    # network_mode: 'host'
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
