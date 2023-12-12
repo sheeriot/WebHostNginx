@@ -13,10 +13,14 @@ services:
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-    # network_mode: 'host'
+      - surveyor_surveyor_staticfiles:/var/www/surveyor/static
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
+  # certbot:
+  #   image: certbot/certbot
+  #   volumes:
+  #     - ./data/certbot/conf:/etc/letsencrypt
+  #     - ./data/certbot/www:/var/www/certbot
+
+volumes:
+  surveyor_surveyor_staticfiles:
+    external: true
