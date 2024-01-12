@@ -1,6 +1,14 @@
+#!/bin/sh
+
 # entrypoint script for nginx container
+# echo "look around before setup_webhost script"
+# ls -latF /etc/nginx/conf.d
+# ls -latF /docker-entrypoint.d
+# env
+# echo "---------------------------------"
 
 export HOME="/root"
+
 cd $HOME || exit 2
 
 # check needed .env settings
@@ -21,4 +29,23 @@ fi
 
 # copy the file apps to /etc/nginx/conf.d
 sed -e "s/@{FQDN}/${NGINX_FQDN}/g" /root/resources/nginx_app80.conf > /etc/nginx/conf.d/app80.conf || exit 4
-sed -e "s/@{FQDN}/${NGINX_FQDN}/g" /root/resources/nginx_app443.conf > /etc/nginx/conf.d/app443.conf || exit 5
+sed -e "s/@{FQDN}/${NGINX_FQDN}/g" /root/resources/nginx_app443.conf > /etc/nginx/conf.d/app443.conf || exit 4
+
+# CERTBOT_TEST=true
+if [[ -z "${CERTBOT_TEST}" ]]; then
+	echo "Certbot Do-It"
+	certbot --agree-tos --email "${CERTBOT_EMAIL}" --non-interactive --domains "$CERTBOT_DOMAINS" --nginx --rsa-key-size 4096 --redirect || exit 5
+	# certbot actually launched Nginx. The simple hack is to stop it; then launch 
+	# it again after we've edited the config files.
+	/usr/sbin/nginx -s stop && echo "stopped successfully"
+
+else
+	# set for dry-run
+	echo "Certbot Dry-Run"
+	certbot certonly --dry-run --agree-tos --email "${CERTBOT_EMAIL}" --non-interactive --domains "$CERTBOT_DOMAINS" --nginx --rsa-key-size 4096 --redirect || exit 5
+
+	# certbot actually launched Nginx. The simple hack is to stop it; then launch 
+	# it again after we've edited the config files.
+	/usr/sbin/nginx -s stop && echo "stopped successfully"
+fi
+
