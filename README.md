@@ -5,7 +5,7 @@ NGINX (or Nginx) is a Node.js based web server. Use it to proxy for your web app
 ## Setup
 
 ```bash
-dopy sample.env .env
+copy sample.env .env
 
 edit .env
 ```
