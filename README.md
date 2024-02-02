@@ -5,10 +5,16 @@ NGINX (or Nginx) is a Node.js based web server. Use it to proxy for your web app
 ## Setup
 
 ```bash
-copy sample.env .env
+cp sample.env .env
 
 edit .env
 ```
+
+## Manual Hacking
+
+To issue the Cert then activate it, some hand hacking of `setup_webhost.md` is currently being used.
+
+* CERTBOT_TEST=true
 
 ## Referenced
 
