@@ -12,7 +12,7 @@ services:
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-      - intaker_intaker_staticfiles:/var/www/intaker/static
+      - informs_informs_staticfiles:/var/www/informs/static
     # networks:
     #   - webhost
 
@@ -23,7 +23,7 @@ services:
   #     - ./data/certbot/www:/var/www/certbot
 
 volumes:
-  intaker_intaker_staticfiles:
+  informs_informs_staticfiles:
     external: true
 
 networks:
