@@ -27,11 +27,16 @@ if [ -z "$NGINX_FQDN" ] || [ "$NGINX_FQDN" = "." ]; then
 	exit 3
 fi
 
-# copy the file apps to /etc/nginx/conf.d
-sed -e "s/@{FQDN}/${NGINX_FQDN}/g" /root/resources/nginx_app.conf > /etc/nginx/conf.d/app.conf || exit 4
+# more variable setup
+CERTBOT_TEST=${CERTBOT_TEST:-false}
+NGINX_SUBDOMAIN=$(echo "$NGINX_FQDN" | cut -d'.' -f1)
+APPNAME=${APPNAME:-$NGINX_SUBDOMAIN}
 
-# CERTBOT_TEST=true
-if [[ -z "${CERTBOT_TEST}" ]]; then
+# copy the variables to /etc/nginx/conf.d
+sed -e "s/@{FQDN}/${NGINX_FQDN}/g" /root/resources/nginx_app.conf > /etc/nginx/conf.d/app.conf || exit 4
+sed -i "s/@{APPNAME}/${APPNAME}/g" /etc/nginx/conf.d/app.conf || exit 4
+
+if [ "${CERTBOT_TEST}" ]; then
 	echo "Certbot Do-It"
 	certbot --agree-tos --email "${CERTBOT_EMAIL}" --non-interactive --domains "$CERTBOT_DOMAINS" --nginx --rsa-key-size 4096 --redirect || exit 5
 	# certbot actually launched Nginx. The simple hack is to stop it; then launch 
