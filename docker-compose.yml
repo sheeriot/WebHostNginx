@@ -1,30 +1,19 @@
 services:
   nginx:
-    environment:
-      CERTBOT_DOMAINS: "${CERTBOT_FQDN:-.}"
-      CERTBOT_EMAIL: "${CERTBOT_EMAIL:-.}"
-      NGINX_FQDN: "${NGINX_FQDN:-.}"
     build: .
     restart: unless-stopped
+    env_file: .env.vars
     ports:
       - 80:80
       - 443:443
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-      - informs_informs_staticfiles:/var/www/informs/static
-    # networks:
-    #   - webhost
+      # - rocks_rocks_staticfiles:/var/www/informs/static
 
-  # certbot:
-  #   image: certbot/certbot
-  #   volumes:
-  #     - ./data/certbot/conf:/etc/letsencrypt
-  #     - ./data/certbot/www:/var/www/certbot
-
-volumes:
-  informs_informs_staticfiles:
-    external: true
+# volumes:
+#   rocks_rocks_staticfiles:
+#     external: true
 
 networks:
   default: 
