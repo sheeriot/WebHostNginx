@@ -48,7 +48,7 @@ if [ "${CERTBOT_TEST}" = true ]; then
 	/usr/sbin/nginx -s stop && echo "stopped successfully"
 else
 	echo "Certbot Do-It"
-	certbot --agree-tos --email "${CERTBOT_EMAIL}" -d ${DOMAINS}  --non-interactive --nginx --rsa-key-size 4096 --redirect || exit 5
+	certbot --agree-tos --email "${CERTBOT_EMAIL}" -d ${DOMAINS} --non-interactive --nginx --rsa-key-size 4096 --redirect || exit 5
 	# certbot actually launched Nginx. The simple hack is to stop it; then launch 
 	# it again after we've edited the config files.
 	/usr/sbin/nginx -s stop && echo "NGINX Stopped after Certbot Issued Cert successfully"
