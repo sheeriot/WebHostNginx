@@ -1,57 +1,105 @@
 #!/bin/sh
+set -e  # Exit immediately if a command exits with non-zero status
 
-echo "----- setup webhost -----"
+echo "===== Webhost Setup Starting ====="
 export HOME="/root"
 
-cd $HOME || exit 2
+# Validate required files and directories
+[ -f "/root/resources/web.sites" ] || { echo "ERROR: web.sites configuration file not found"; exit 1; }
+[ -d "/etc/nginx/conf.d" ] || { echo "ERROR: nginx conf.d directory not found"; exit 1; }
 
-# check needed environment settings
-if [ -z "$APPS" ]; then
-	echo "The container must have an APPS variable set to a comma-separated list of application names" 
-	exit 3
-fi
+# Source web.sites configuration
+. /root/resources/web.sites
 
-if [ -z "$CERTBOT_EMAIL" ]; then
-	echo "The container must have a CERTBOT_EMAIL variable set to an email address useful to certbot/letsencrypt for notifications"
-	exit 3
-fi
+# Validate core requirements
+[ -n "$CERTBOT_EMAIL" ] || { echo "ERROR: CERTBOT_EMAIL must be set in environment"; exit 1; }
+[ -n "$APPS" ] || [ -n "$STATIC_SITES" ] || { echo "ERROR: No apps or static sites configured"; exit 1; }
 
-# more variable setup
+# Initialize
 CERTBOT_TEST=${CERTBOT_TEST:-false}
 DOMAINS=""
-IFS=","
-for app in ${APPS}; do
-    APPNAME=$(echo "$app" | tr '[:lower:]' '[:upper:]')
-    APP_DNSVAR="${APPNAME}_DNS"
-    eval APP_DNS=\$$APP_DNSVAR
-    APP_PORTVAR="${APPNAME}_PORT"
-    eval APP_PORT=\$$APP_PORTVAR
+echo "$(date): Starting webhost setup"
 
-    sed -e "s/@{FQDN}/${APP_DNS}/g" /root/resources/nginx_app.conf > /etc/nginx/conf.d/${app}.conf || exit 4
-    sed -i "s/@{APPNAME}/${app}/g" /etc/nginx/conf.d/${app}.conf || exit 4
-    sed -i "s/@{PORT}/${APP_PORT}/g" /etc/nginx/conf.d/${app}.conf || exit 4
-	
-    DOMAINS="${DOMAINS}${APP_DNS},"
-done
+# Process applications
+if [ -n "$APPS" ]; then
+    echo "Processing applications..."
+    IFS=","
+    for app in ${APPS}; do
+        echo "Configuring ${app}..."
+        APPNAME=$(echo "$app" | tr '[:lower:]' '[:upper:]')
+        APP_DNSVAR="${APPNAME}_DNS"
+        APP_PORTVAR="${APPNAME}_PORT"
+        eval APP_DNS=\$$APP_DNSVAR
+        eval APP_PORT=\$$APP_PORTVAR
 
-# Get DNS list for Certs
-IFS=" "
-DOMAINS="${DOMAINS%,}"
+        # Validate app configuration
+        [ -n "$APP_DNS" ] || { echo "ERROR: ${app} missing DNS configuration"; exit 1; }
+        [ -n "$APP_PORT" ] || { echo "ERROR: ${app} missing PORT configuration"; exit 1; }
 
-if [ "${CERTBOT_TEST}" = true ]; then
-	# set for dry-run
-	echo "Certbot Dry-Run"
-	certbot certonly --dry-run --agree-tos --email "${CERTBOT_EMAIL}" -d ${DOMAINS} --non-interactive ${CERTBOT_DOMAINS} --nginx --rsa-key-size 4096 --redirect || exit 5
+        # Use app-specific config if it exists, otherwise use default
+        if [ -f "/root/resources/nginx_${app}.conf" ]; then
+            CONFIG_TEMPLATE="/root/resources/nginx_${app}.conf"
+        else
+            CONFIG_TEMPLATE="/root/resources/nginx_app.conf"
+        fi
+        [ -f "$CONFIG_TEMPLATE" ] || { echo "ERROR: nginx template not found: ${CONFIG_TEMPLATE}"; exit 1; }
 
-	# certbot actually launched Nginx. The simple hack is to stop it; then launch 
-	# it again after we've edited the config files.
-	/usr/sbin/nginx -s stop && echo "stopped successfully"
-else
-	echo "Certbot Do-It"
-	certbot --agree-tos --email "${CERTBOT_EMAIL}" -d ${DOMAINS} --non-interactive --nginx --rsa-key-size 4096 --redirect || exit 5
-	# certbot actually launched Nginx. The simple hack is to stop it; then launch 
-	# it again after we've edited the config files.
-	/usr/sbin/nginx -s stop && echo "NGINX Stopped after Certbot Issued Cert successfully"
+        # Generate config
+        sed -e "s/@{FQDN}/${APP_DNS}/g" \
+            -e "s/@{APPNAME}/${app}/g" \
+            -e "s/@{PORT}/${APP_PORT}/g" \
+            "$CONFIG_TEMPLATE" > "/etc/nginx/conf.d/${app}.conf"
+
+        DOMAINS="${DOMAINS}${APP_DNS},"
+        echo "Successfully configured ${app}"
+    done
 fi
 
-# note that Cerbot modifies the config file as needed to install 443 config
+# Process static sites
+if [ -n "$STATIC_SITES" ]; then
+    echo "Processing static sites..."
+    IFS=","
+    for site in ${STATIC_SITES}; do
+        echo "Configuring ${site}..."
+        SITE_NAME=$(echo "$site" | tr '[:lower:]' '[:upper:]')
+        SITE_DNSVAR="${SITE_NAME}_DNS"
+        SITE_DIRVAR="${SITE_NAME}_DIR"
+        eval SITE_DNS=\$$SITE_DNSVAR
+        eval SITE_DIR=\$$SITE_DIRVAR
+
+        # Validate static site configuration
+        [ -n "$SITE_DNS" ] || { echo "ERROR: ${site} missing DNS configuration"; exit 1; }
+        [ -n "$SITE_DIR" ] || { echo "ERROR: ${site} missing DIR configuration for ${site}"; exit 1; }
+        [ -d "$SITE_DIR" ] || { echo "ERROR: Directory ${SITE_DIR} not found for site ${site}"; exit 1; }
+        [ -f "/root/resources/nginx_static.conf" ] || { echo "ERROR: nginx static template not found"; exit 1; }
+
+        # Generate config
+        sed -e "s/@{FQDN}/${SITE_DNS}/g" \
+            -e "s#@{SITEPATH}#${SITE_DIR}#g" \
+            "/root/resources/nginx_static.conf" > "/etc/nginx/conf.d/${site}.conf"
+
+        DOMAINS="${DOMAINS}${SITE_DNS},"
+        echo "Successfully configured static site ${site}"
+    done
+fi
+
+# Prepare domains for certbot
+[ -n "$DOMAINS" ] || { echo "ERROR: No domains configured"; exit 1; }
+# Remove trailing comma
+DOMAINS="${DOMAINS%,}"
+echo "Configuring SSL certificates for domains: ${DOMAINS}"
+
+# Run certbot
+if [ "${CERTBOT_TEST}" = true ]; then
+    echo "Certbot Dry-Run"
+    certbot certonly --dry-run --agree-tos --email "${CERTBOT_EMAIL}" -d "${DOMAINS}" --non-interactive --nginx --rsa-key-size 4096 --redirect --expand|| exit 5
+    # Stop nginx (started by certbot)
+    /usr/sbin/nginx -s stop && echo "stopped successfully"
+else
+    echo "Certbot Do-It"
+    certbot --agree-tos --email "${CERTBOT_EMAIL}" -d "${DOMAINS}" --non-interactive --nginx --rsa-key-size 4096 --redirect --expand || exit 5
+    # Stop nginx (started by certbot)
+    /usr/sbin/nginx -s stop && echo "NGINX Stopped after Certbot Issued Cert successfully"
+fi
+
+echo "===== Webhost Setup Complete ====="
