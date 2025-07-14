@@ -36,6 +36,12 @@ if [ -n "$APPS" ]; then
         [ -n "$APP_DNS" ] || { echo "ERROR: ${app} missing DNS configuration"; exit 1; }
         [ -n "$APP_PORT" ] || { echo "ERROR: ${app} missing PORT configuration"; exit 1; }
 
+        # Check if app hostname is resolvable
+        if ! getent hosts "${APP_DNS}" >/dev/null; then
+            echo "WARNING: Hostname ${APP_DNS} for app ${app} is not resolvable. Skipping configuration."
+            continue
+        fi
+
         # Use app-specific config if it exists, otherwise use default
         if [ -f "/root/resources/nginx_${app}.conf" ]; then
             CONFIG_TEMPLATE="/root/resources/nginx_${app}.conf"
