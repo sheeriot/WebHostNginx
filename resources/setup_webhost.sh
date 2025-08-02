@@ -32,6 +32,18 @@ if [ -n "$APPS" ]; then
         eval APP_DNS=\$$APP_DNSVAR
         eval APP_PORT=\$$APP_PORTVAR
 
+        # Check for an explicit upstream host, otherwise default to the app name
+        APP_UPSTREAMVAR="${APPNAME}_UPSTREAM"
+        eval APP_UPSTREAM=\$$APP_UPSTREAMVAR
+        if [ -z "$APP_UPSTREAM" ]; then
+            APP_UPSTREAM=$app
+        fi
+
+        echo "--> Processing app: '${app}'"
+        echo "    DNS: ${APP_DNS}"
+        echo "    Port: ${APP_PORT}"
+        echo "    Upstream Host: ${APP_UPSTREAM}"
+
         # Validate app configuration
         [ -n "$APP_DNS" ] || { echo "ERROR: ${app} missing DNS configuration"; exit 1; }
         [ -n "$APP_PORT" ] || { echo "ERROR: ${app} missing PORT configuration"; exit 1; }
@@ -54,6 +66,7 @@ if [ -n "$APPS" ]; then
         sed -e "s/@{FQDN}/${APP_DNS}/g" \
             -e "s/@{APPNAME}/${app}/g" \
             -e "s/@{PORT}/${APP_PORT}/g" \
+            -e "s/@{UPSTREAM_HOST}/${APP_UPSTREAM}/g" \
             "$CONFIG_TEMPLATE" > "/etc/nginx/conf.d/${app}.conf"
 
         DOMAINS="${DOMAINS}${APP_DNS},"

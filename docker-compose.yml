@@ -10,7 +10,7 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
       - rocks_rocks_staticfiles:/var/www/rocks/static
-      - sensorplaces_sensorplaces-static:/var/www/sensorplaces/static
+      - sensorplaces_sensors-static:/var/www/sensors/static
       - type: bind
         source: /var/www/sites
         target: /var/www/sites
@@ -21,7 +21,7 @@ services:
 volumes:
   rocks_rocks_staticfiles:
     external: true
-  sensorplaces_sensorplaces-static:
+  sensorplaces_sensors-static:
     external: true
 
 networks:
