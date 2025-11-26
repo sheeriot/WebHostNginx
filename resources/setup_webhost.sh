@@ -111,12 +111,12 @@ echo "Configuring SSL certificates for domains: ${DOMAINS}"
 # Run certbot
 if [ "${CERTBOT_TEST}" = true ]; then
     echo "Certbot Dry-Run"
-    certbot certonly --dry-run --agree-tos --email "${CERTBOT_EMAIL}" -d "${DOMAINS}" --non-interactive --nginx --rsa-key-size 4096 --redirect --expand|| exit 5
+    certbot certonly --dry-run --agree-tos --email "${CERTBOT_EMAIL}" -d "${DOMAINS}" --non-interactive --nginx --rsa-key-size 4096 --expand|| exit 5
     # Stop nginx (started by certbot)
     /usr/sbin/nginx -s stop && echo "stopped successfully"
 else
     echo "Certbot Do-It"
-    certbot --agree-tos --email "${CERTBOT_EMAIL}" -d "${DOMAINS}" --non-interactive --nginx --rsa-key-size 4096 --redirect --expand || exit 5
+    certbot --agree-tos --email "${CERTBOT_EMAIL}" -d "${DOMAINS}" --non-interactive --nginx --rsa-key-size 4096 --expand || exit 5
     # Stop nginx (started by certbot)
     /usr/sbin/nginx -s stop && echo "NGINX Stopped after Certbot Issued Cert successfully"
 fi

@@ -9,20 +9,13 @@ services:
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-      - rocks_rocks_staticfiles:/var/www/rocks/static
-      - sensorplaces_sensors-static:/var/www/sensors/static
+      # - ./data/nginx/logs:/var/log/nginx
       - type: bind
         source: /var/www/sites
         target: /var/www/sites
         read_only: true
     networks:
       - webhost
-
-volumes:
-  rocks_rocks_staticfiles:
-    external: true
-  sensorplaces_sensors-static:
-    external: true
 
 networks:
   webhost:

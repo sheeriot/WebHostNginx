@@ -1,0 +1,19 @@
+APPS=one,two,three
+
+# DNS Names for Apps
+
+ONE_DNS=one.example.com
+ONE_PORT=8000
+
+TWO_DNS=two.opeongo.net
+TWO_PORT=9000
+
+THREE_DNS=three.opeongo.net
+THREE_PORT=8080
+
+STATIC_SITES=four
+
+# DNS for static
+
+FOUR_DNS=four.example.com
+FOUR_DIR=/var/www/four
