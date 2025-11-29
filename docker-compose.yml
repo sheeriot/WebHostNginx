@@ -9,7 +9,7 @@ services:
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-      # - ./data/nginx/logs:/var/log/nginx
+      - ./data/nginx/logs:/var/log/nginx
       - type: bind
         source: /var/www/sites
         target: /var/www/sites
