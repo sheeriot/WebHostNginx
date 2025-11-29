@@ -139,6 +139,7 @@ if [ "$MISSING_CERTS" = "true" ]; then
     
     # 2. Start NGINX in background
     echo "Starting temporary NGINX..."
+    echo "$(date) [info] Starting Webhost Setup (Bootstrap Mode)..." >> /var/log/nginx/security_violations.log
     nginx
     sleep 2 # Give it a moment to start
     
@@ -183,3 +184,4 @@ else
 fi
 
 echo "===== Webhost Setup Complete ====="
+echo "$(date) [info] Webhost Setup Complete. Nginx is ready." >> /var/log/nginx/security_violations.log
