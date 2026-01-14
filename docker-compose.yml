@@ -16,6 +16,12 @@ services:
         read_only: true
     networks:
       - webhost
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
 
 networks:
   webhost:
