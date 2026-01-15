@@ -14,6 +14,8 @@ services:
         source: /var/www/sites
         target: /var/www/sites
         read_only: true
+      # Informs static files (collected by Django collectstatic)
+      - informs_staticfiles:/var/www/informs/static:ro
     networks:
       - webhost
     deploy:
@@ -22,6 +24,12 @@ services:
           memory: 512M
         reservations:
           memory: 128M
+
+volumes:
+  # External volume from informs project
+  informs_staticfiles:
+    external: true
+    name: informs_informs_staticfiles
 
 networks:
   webhost:
